@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ITechLab – Accounting software demo</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f3f5f2;--surface:#fff;--ink:#17261f;--muted:#66756d;--line:#dde3de;--accent:#0f5c4d;--accent-ink:#fff;--warn:#b5651d;--warn-bg:#fbefdd;--ok-bg:#dff1e8;--bad:#a8362f}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101815;--surface:#17221d;--ink:#e6efe9;--muted:#93a39a;--line:#2a3a33;--accent:#4fc3a1;--accent-ink:#06231b;--warn:#f0b36b;--warn-bg:#3a2b17;--ok-bg:#183a2d;--bad:#ef8b83}}
+:root[data-theme="dark"]{--bg:#101815;--surface:#17221d;--ink:#e6efe9;--muted:#93a39a;--line:#2a3a33;--accent:#4fc3a1;--accent-ink:#06231b;--warn:#f0b36b;--warn-bg:#3a2b17;--ok-bg:#183a2d;--bad:#ef8b83}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+.app{display:grid;grid-template-columns:210px 1fr;min-height:100vh}
+nav{background:var(--surface);border-right:1px solid var(--line);padding:20px 12px;position:sticky;top:0;height:100vh;align-self:start}
+.brand{font:600 20px "IBM Plex Serif",Georgia,serif;padding:0 10px 18px;color:var(--accent)}
+nav button{display:block;width:100%;text-align:left;background:none;border:0;color:var(--ink);padding:9px 10px;border-radius:6px;font:inherit;cursor:pointer;margin-bottom:2px}
+nav button:hover{background:var(--bg)}
+nav button.on{background:var(--accent);color:var(--accent-ink);font-weight:600}
+main{padding:24px 28px;min-width:0}
+h1{font:600 24px "IBM Plex Serif",Georgia,serif;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px}
+.stat small{color:var(--muted);display:block}
+.stat b{font-size:22px;font-variant-numeric:tabular-nums}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:16px}
+.panel h2{font-size:16px;margin:0 0 12px}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--muted);font-weight:500;font-size:13px}
+td.n,th.n{text-align:right}
+tfoot td{font-weight:600;border-bottom:0}
+.tag{padding:2px 8px;border-radius:99px;font-size:12px;background:var(--ok-bg);color:var(--accent)}
+.tag.due{background:var(--warn-bg);color:var(--warn)}
+form{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;align-items:end}
+label{font-size:13px;color:var(--muted);display:block}
+input,select{width:100%;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:6px;padding:9px 14px;font:inherit;font-weight:600;cursor:pointer}
+.btn.ghost{background:none;color:var(--accent);border:1px solid var(--accent);padding:4px 10px;font-weight:500}
+.bars{display:flex;gap:14px;align-items:flex-end;height:140px}
+.bars div{flex:1;text-align:center;font-size:12px;color:var(--muted)}
+.bars span{display:inline-block;width:42%;margin:0 2px;border-radius:3px 3px 0 0;vertical-align:bottom}
+.inv{max-width:640px;background:#fff;color:#17261f;border:1px solid var(--line);border-radius:8px;padding:28px}
+.inv table th{color:#66756d}.inv td,.inv th{border-color:#dde3de}
+.inv h3{font:600 22px Georgia,serif;margin:0;color:#0f5c4d}
+.row{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.cost input{width:110px}
+@media (max-width:720px){.app{grid-template-columns:1fr}nav{position:static;height:auto;display:flex;overflow-x:auto;padding:10px;gap:4px}.brand{display:none}nav button{width:auto;white-space:nowrap}main{padding:16px}}
+</style>
+</head>
+<body>
+<div class="app">
+<nav id="nav"></nav>
+<main id="view"></main>
+</div>
+<script>
+var fmt=function(n){return "₹"+Math.round(n).toLocaleString("en-IN")};
+var GST=0.18;
+var sales=[
+{no:"INV-1001",date:"2026-08-04",party:"Shree Textiles",desc:"Cotton fabric rolls",qty:40,rate:1250,paid:true},
+{no:"INV-1002",date:"2026-08-19",party:"Patel Traders",desc:"Packing material",qty:120,rate:310,paid:true},
+{no:"INV-1003",date:"2026-09-07",party:"Om Enterprises",desc:"Dyed yarn",qty:75,rate:860,paid:false},
+{no:"INV-1004",date:"2026-09-22",party:"Shree Textiles",desc:"Cotton fabric rolls",qty:55,rate:1250,paid:true},
+{no:"INV-1005",date:"2026-10-10",party:"Kiran Garments",desc:"Stitched samples",qty:30,rate:1900,paid:false}];
+var buys=[
+{no:"BILL-501",date:"2026-08-02",party:"Raj Cotton Mills",desc:"Raw cotton",qty:900,rate:48,paid:true},
+{no:"BILL-502",date:"2026-08-25",party:"Sun Packaging",desc:"Cartons",qty:300,rate:62,paid:true},
+{no:"BILL-503",date:"2026-09-15",party:"Raj Cotton Mills",desc:"Raw cotton",qty:1200,rate:51,paid:false},
+{no:"BILL-504",date:"2026-10-05",party:"ColorChem Dyes",desc:"Dye stock",qty:150,rate:240,paid:true}];
+var tab="dash",openInv=null;
+var tabs=[["dash","Dashboard"],["sales","Sales"],["buys","Purchases"],["inv","Invoices"],["cost","Build cost"]];
+function sub(r){return r.qty*r.rate}
+function tot(r){return sub(r)*(1+GST)}
+function sum(a,f){return a.reduce(function(s,r){return s+f(r)},0)}
+function nav(){var h='<div class="brand">LedgerLite</div>';
+tabs.forEach(function(t){h+='<button class="'+(tab===t[0]?"on":"")+'" data-t="'+t[0]+'">'+t[1]+'</button>'});
+document.getElementById("nav").innerHTML=h;
+document.querySelectorAll("nav button").forEach(function(b){b.onclick=function(){tab=b.dataset.t;openInv=null;draw()}})}
+function head(t,s){return '<h1>'+t+'</h1><p class="sub">'+s+'</p>'}
+function status(r){return r.paid?'<span class="tag">Paid</span>':'<span class="tag due">Due</span>'}
+function dash(){
+var s=sum(sales,sub),p=sum(buys,sub),rec=sum(sales.filter(function(r){return !r.paid}),tot);
+var gstOut=s*GST,gstIn=p*GST;
+var months=[["Aug","08"],["Sep","09"],["Oct","10"]];
+var mx=1;var data=months.map(function(m){var a=sum(sales.filter(function(r){return r.date.slice(5,7)===m[1]}),sub),b=sum(buys.filter(function(r){return r.date.slice(5,7)===m[1]}),sub);mx=Math.max(mx,a,b);return[m[0],a,b]});
+var bars=data.map(function(d){return '<div><span style="height:'+(d[1]/mx*110)+'px;background:var(--accent)"></span><span style="height:'+(d[2]/mx*110)+'px;background:var(--warn)"></span><br>'+d[0]+'</div>'}).join("");
+return head("Dashboard","Your business at a glance, updated as you add entries.")+
+'<div class="grid"><div class="stat"><small>Sales (before tax)</small><b>'+fmt(s)+'</b></div><div class="stat"><small>Purchases (before tax)</small><b>'+fmt(p)+'</b></div><div class="stat"><small>Gross profit</small><b>'+fmt(s-p)+'</b></div><div class="stat"><small>Customers owe you</small><b>'+fmt(rec)+'</b></div><div class="stat"><small>GST payable (sales − purchases)</small><b>'+fmt(gstOut-gstIn)+'</b></div></div>'+
+'<div class="panel"><h2>Sales and purchases by month</h2><div class="bars">'+bars+'</div><p class="sub" style="margin:10px 0 0">Green is sales, amber is purchases.</p></div>';}
+function list(kind){
+var a=kind==="sales"?sales:buys,isS=kind==="sales";
+var rows=a.map(function(r,i){return '<tr><td>'+r.no+'</td><td>'+r.date+'</td><td>'+r.party+'</td><td>'+r.desc+'</td><td class="n">'+r.qty+'</td><td class="n">'+fmt(r.rate)+'</td><td class="n">'+fmt(sub(r)*GST)+'</td><td class="n">'+fmt(tot(r))+'</td><td>'+status(r)+'</td><td><button class="btn ghost" data-p="'+i+'">'+(r.paid?"Mark due":"Mark paid")+'</button></td></tr>'}).join("");
+return head(isS?"Sales":"Purchases",isS?"Record a sale. An invoice is created automatically.":"Record a supplier bill. GST paid is tracked as input credit.")+
+'<div class="panel"><h2>'+(isS?"New sale":"New purchase")+'</h2><form id="f"><div><label>'+(isS?"Customer":"Supplier")+'</label><input name="party" required></div><div><label>Item</label><input name="desc" required></div><div><label>Quantity</label><input name="qty" type="number" min="1" required></div><div><label>Rate (₹)</label><input name="rate" type="number" min="1" required></div><div><button class="btn" type="submit">Save '+(isS?"sale":"purchase")+'</button></div></form></div>'+
+'<div class="panel scroll"><table><thead><tr><th>No.</th><th>Date</th><th>'+(isS?"Customer":"Supplier")+'</th><th>Item</th><th class="n">Qty</th><th class="n">Rate</th><th class="n">GST 18%</th><th class="n">Total</th><th>Status</th><th></th></tr></thead><tbody>'+rows+'</tbody><tfoot><tr><td colspan="7">Total</td><td class="n">'+fmt(sum(a,tot))+'</td><td colspan="2"></td></tr></tfoot></table></div>';}
+function invoices(){
+if(openInv!==null){var r=sales[openInv];
+return head("Invoice "+r.no,"This is what your customer receives.")+'<p><button class="btn ghost" id="back">Back to invoices</button> <button class="btn" onclick="window.print()">Print</button></p>'+
+'<div class="inv"><div class="row"><div><h3>Tax invoice</h3><div>'+r.no+'</div><div>Date: '+r.date+'</div></div><div style="text-align:right"><b>Your Company Pvt Ltd</b><br>GSTIN: 24ABCDE1234F1Z5<br>Gujarat, India</div></div><div class="row"><div><small>Billed to</small><br><b>'+r.party+'</b></div><div>'+status(r)+'</div></div>'+
+'<table><thead><tr><th>Item</th><th class="n">Qty</th><th class="n">Rate</th><th class="n">Amount</th></tr></thead><tbody><tr><td>'+r.desc+'</td><td class="n">'+r.qty+'</td><td class="n">'+fmt(r.rate)+'</td><td class="n">'+fmt(sub(r))+'</td></tr></tbody><tfoot><tr><td colspan="3" class="n">Subtotal</td><td class="n">'+fmt(sub(r))+'</td></tr><tr><td colspan="3" class="n">CGST 9%</td><td class="n">'+fmt(sub(r)*0.09)+'</td></tr><tr><td colspan="3" class="n">SGST 9%</td><td class="n">'+fmt(sub(r)*0.09)+'</td></tr><tr><td colspan="3" class="n">Total due</td><td class="n">'+fmt(tot(r))+'</td></tr></tfoot></table></div>';}
+var rows=sales.map(function(r,i){return '<tr><td>'+r.no+'</td><td>'+r.date+'</td><td>'+r.party+'</td><td class="n">'+fmt(tot(r))+'</td><td>'+status(r)+'</td><td><button class="btn ghost" data-v="'+i+'">Open invoice</button></td></tr>'}).join("");
+return head("Invoices","Every sale becomes a GST invoice. Open one to preview it.")+'<div class="panel scroll"><table><thead><tr><th>Invoice</th><th>Date</th><th>Customer</th><th class="n">Total</th><th>Status</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>';}
+var mods=[["Login and user roles",80],["Customers, suppliers and items",120],["Sales module",160],["Purchase module",160],["Invoice, GST and PDF",180],["Payments and ledger",140],["Reports (P&L, GST, aging)",120],["Dashboard",60],["UI and UX design",120],["Testing and fixes",150],["Hosting and deployment",60],["Project management",100]];
+var rate=1500,usd=88;
+function cost(){
+var hrs=sum(mods,function(m){return m[1]}),base=hrs*rate,cont=base*0.15,total=base+cont;
+var rows=mods.map(function(m){return '<tr><td>'+m[0]+'</td><td class="n">'+m[1]+'</td><td class="n">'+fmt(m[1]*rate)+'</td></tr>'}).join("");
+return head("Build cost","Estimated cost to build the first full version. Change the hourly rate to see the total move.")+
+'<div class="panel cost"><label>Blended hourly rate (₹)</label><input id="rate" type="number" min="300" step="100" value="'+rate+'"></div>'+
+'<div class="panel scroll"><table><thead><tr><th>Module</th><th class="n">Hours</th><th class="n">Cost</th></tr></thead><tbody>'+rows+'</tbody><tfoot><tr><td>Build subtotal</td><td class="n">'+hrs+'</td><td class="n">'+fmt(base)+'</td></tr><tr><td>Contingency (15%)</td><td></td><td class="n">'+fmt(cont)+'</td></tr><tr><td>Total build cost</td><td></td><td class="n">'+fmt(total)+' (about $'+Math.round(total/usd).toLocaleString("en-US")+')</td></tr></tfoot></table></div>'+
+'<div class="panel"><h2>Running costs after launch</h2><table><tbody><tr><td>Cloud hosting, database, backups</td><td class="n">₹60,000 to ₹1,20,000 a year</td></tr><tr><td>Maintenance and updates (15% of build)</td><td class="n">'+fmt(base*0.15)+' a year</td></tr><tr><td>Domain, SSL, email service</td><td class="n">₹10,000 a year</td></tr></tbody></table><p class="sub" style="margin:10px 0 0">Timeline: about 4 to 5 months with a team of 3 to 4 people.</p></div>';}
+function draw(){nav();var v=document.getElementById("view");
+v.innerHTML=tab==="dash"?dash():tab==="sales"?list("sales"):tab==="buys"?list("buys"):tab==="inv"?invoices():cost();
+var f=document.getElementById("f");
+if(f){f.onsubmit=function(e){e.preventDefault();var d=new FormData(f),isS=tab==="sales",a=isS?sales:buys;
+a.push({no:(isS?"INV-":"BILL-")+(isS?1001+a.length:501+a.length),date:"2026-10-27",party:d.get("party"),desc:d.get("desc"),qty:+d.get("qty"),rate:+d.get("rate"),paid:false});draw()}}
+v.querySelectorAll("[data-p]").forEach(function(b){b.onclick=function(){var a=tab==="sales"?sales:buys,r=a[+b.dataset.p];r.paid=!r.paid;draw()}});
+v.querySelectorAll("[data-v]").forEach(function(b){b.onclick=function(){openInv=+b.dataset.v;draw()}});
+var bk=document.getElementById("back");if(bk)bk.onclick=function(){openInv=null;draw()};
+var rt=document.getElementById("rate");if(rt)rt.onchange=function(){rate=Math.max(300,+rt.value||1500);draw()};}
+draw();
+</script>
+</body>
+</html>
